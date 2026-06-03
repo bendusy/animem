@@ -25,3 +25,21 @@ or operational files with private deployments.
 If a feature starts in a private repository, port it into `animem` by rewriting
 the public abstraction and tests from scratch. Do not copy fixtures, comments,
 or examples that were derived from private documents.
+
+## Private Extension Rule
+
+Domain tuning must cross the boundary as data, not as public Rust defaults.
+Allowed public surface:
+
+- profile structs and validators;
+- neutral rule-pack schemas;
+- synthetic examples;
+- adapter traits behind features.
+
+Private-only surface:
+
+- tokenizer dictionaries from real archives;
+- organization or person name lists;
+- prompt packs tuned on private material;
+- evaluation queries derived from private work;
+- provider/model defaults and network endpoints.

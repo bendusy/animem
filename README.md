@@ -8,6 +8,7 @@ It provides neutral primitives for:
 - splitting text into citeable sections;
 - deriving lightweight document cards from caller-provided metadata;
 - representing reviewable memory candidates before promotion;
+- declaring private tokenizer/card/promotion rule packs without bundling them;
 - keeping provenance links between memory and source text.
 
 This repository is intentionally separate from any private deployment,
@@ -58,6 +59,11 @@ See [docs/REDACTION_POLICY.md](docs/REDACTION_POLICY.md).
 
 Local data maintenance is handled through private profiles outside this
 repository. See [docs/LOCAL_DATA.md](docs/LOCAL_DATA.md).
+
+Private tuning belongs in extension profiles, not in Rust defaults. The public
+crate exposes `ExtensionProfile` for tokenizer terms, card rules, and promotion
+type mappings, but real values must live in a private repository or local
+runtime config.
 
 The replacement path for older `mf` maintenance code is tracked in
 [docs/MIGRATION_FROM_MF.md](docs/MIGRATION_FROM_MF.md).

@@ -26,8 +26,10 @@ Private maintenance code should own:
 1. Move hard-coded local selectors into private profiles.
 2. Replace source-path persistence with profile-derived source references.
 3. Move provider defaults to environment or private profile values.
-4. Add public CLI commands that consume a `MaintenancePlan`.
-5. Keep private adapters thin enough that they can be deleted after parity.
+4. Move tokenizer dictionaries, card guesses, extraction prompts, and eval
+   suites into private extension profiles or rule packs.
+5. Add public CLI commands that consume a `MaintenancePlan`.
+6. Keep private adapters thin enough that they can be deleted after parity.
 
 The public repository must not import old `mf` fixtures, paths, hostnames, or
 git history.

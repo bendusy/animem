@@ -8,6 +8,7 @@
 mod candidate;
 mod document;
 mod error;
+mod extension;
 mod ids;
 mod maintenance;
 mod profile;
@@ -16,6 +17,10 @@ mod splitter;
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
 pub use error::{AnimemError, Result};
+pub use extension::{
+    CandidateTypeMapping, CardRulePack, ExtensionProfile, PromotionPolicy, TextPattern,
+    TokenizerConfig,
+};
 pub use ids::{asset_id, section_id};
 pub use maintenance::{MaintenanceJob, MaintenancePlan};
 pub use profile::{
