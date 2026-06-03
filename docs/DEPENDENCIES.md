@@ -27,7 +27,8 @@ These are intentionally not part of the base crate:
 - LLM clients;
 - HTTP servers;
 - MCP servers;
-- private deployment scripts.
+- private deployment scripts;
+- private profile runners.
 
 They may be added later behind explicit Cargo features such as `storage-sql`,
 `embedding-http`, or `llm-client`.

@@ -1,0 +1,18 @@
+{
+  "name": "example",
+  "sources": [
+    {
+      "source_id": "policy-memos",
+      "label": "Policy Memo Samples",
+      "root": "/example/private/source",
+      "include_extensions": ["md", "txt"],
+      "exclude_globs": ["**/draft/**"]
+    }
+  ],
+  "maintenance": {
+    "batch_prefix": "example-batch",
+    "require_dry_run": true,
+    "write_source_paths": false
+  },
+  "path_privacy": "store_relative_path"
+}

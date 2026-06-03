@@ -55,3 +55,6 @@ fixture, use neutral names like `Example Org`, `Project Alpha`, or
 `Policy Memo A`.
 
 See [docs/REDACTION_POLICY.md](docs/REDACTION_POLICY.md).
+
+Local data maintenance is handled through private profiles outside this
+repository. See [docs/LOCAL_DATA.md](docs/LOCAL_DATA.md).

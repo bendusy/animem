@@ -9,10 +9,14 @@ mod candidate;
 mod document;
 mod error;
 mod ids;
+mod profile;
 mod splitter;
 
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
 pub use error::{AnimemError, Result};
 pub use ids::{asset_id, section_id};
+pub use profile::{
+    DataSource, LocalProfile, MaintenancePolicy, PathPrivacy, ProfileValidationError,
+};
 pub use splitter::{split_sections, SplitOptions};
