@@ -1,0 +1,26 @@
+/target/
+Cargo.lock
+/.idea/
+/.vscode/
+/.DS_Store
+
+# Local data and generated artifacts. Public examples must live under
+# examples/ with synthetic data only.
+/data/
+/cache/
+/scratch/
+/tmp/
+*.db
+*.sqlite
+*.sqlite3
+*.env
+*.env.*
+!.env.example
+
+# Secrets and local deployment files.
+*.pem
+*.key
+*.p12
+*.pgpass
+credentials*.json
+secrets*.json
