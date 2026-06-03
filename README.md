@@ -17,11 +17,17 @@ cards, no internal hostnames, no private paths, and no bundled memory data.
 
 ## Current Scope
 
-This first public slice is a pure Rust library. It does not start services,
-open network connections, or require PostgreSQL.
+This first public slice is a pure Rust library plus a storage-free CLI. It does
+not start services, open network connections, or require PostgreSQL.
 
 ```bash
 cargo test
+```
+
+```bash
+animem profile validate examples/profile.example.json
+animem extension validate examples/extension-profile.example.json
+animem plan examples/profile.example.json
 ```
 
 Recommended local checks before sending a change:

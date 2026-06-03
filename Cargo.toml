@@ -11,6 +11,7 @@ keywords = ["memory", "agents", "documents", "retrieval"]
 categories = ["data-structures", "text-processing"]
 include = [
     "src/**/*",
+    "tests/**/*",
     "docs/**/*",
     "examples/**/*",
     "scripts/scan-sensitive.sh",
