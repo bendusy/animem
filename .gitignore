@@ -16,6 +16,10 @@ Cargo.lock
 *.env
 *.env.*
 !.env.example
+*.local.*
+*.private.*
+*.bak
+*.orig
 
 # Secrets and local deployment files.
 *.pem

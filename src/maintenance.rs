@@ -56,6 +56,7 @@ mod tests {
     #[test]
     fn builds_jobs_from_profile_sources() {
         let profile = LocalProfile {
+            schema_version: Some("1".to_string()),
             name: "example".to_string(),
             sources: vec![DataSource {
                 source_id: "notes".to_string(),

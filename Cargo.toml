@@ -9,6 +9,17 @@ repository = "https://github.com/animem/animem"
 readme = "README.md"
 keywords = ["memory", "agents", "documents", "retrieval"]
 categories = ["data-structures", "text-processing"]
+include = [
+    "src/**/*",
+    "docs/**/*",
+    "examples/**/*",
+    "scripts/scan-sensitive.sh",
+    ".github/workflows/ci.yml",
+    "Cargo.toml",
+    "Cargo.lock",
+    "LICENSE",
+    "README.md",
+]
 
 [dependencies]
 regex = "1"

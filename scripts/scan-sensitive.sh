@@ -37,6 +37,18 @@ for pattern in "${patterns[@]}"; do
   fi
 done
 
+package_list=$(cargo package --allow-dirty --no-verify --list)
+while IFS= read -r package_file; do
+  case "$package_file" in
+    "" ) ;;
+    Cargo.toml.orig ) ;;
+    *.orig|*.bak|*.env|*.env.*|*.local.*|*.private.*|cache/*|data/*|scratch/*|tmp/*|target/*|memory-flow/*|*/memory-flow/* )
+      echo "sensitive package entry: $package_file" >&2
+      status=1
+      ;;
+  esac
+done <<< "$package_list"
+
 if [[ "$status" -ne 0 ]]; then
   echo "sensitive scan failed" >&2
   exit "$status"

@@ -31,6 +31,7 @@ cargo fmt -- --check
 cargo clippy --all-targets -- -D warnings
 cargo test --all
 ./scripts/scan-sensitive.sh
+cargo package --allow-dirty --no-verify --list
 ```
 
 ## Non-Goals
@@ -40,6 +41,12 @@ cargo test --all
 - No real document examples.
 - No checked-in caches, embeddings, databases, or evaluation exports.
 - No inherited history from private repositories.
+
+## Boundary
+
+Public code, local data, redaction, and dependency policy are summarized in
+[docs/BOUNDARY.md](docs/BOUNDARY.md). Treat that file as the release gate before
+adding examples, fixtures, integrations, or package contents.
 
 ## Dependency Policy
 

@@ -4,6 +4,8 @@ use crate::{CandidateKind, ProfileValidationError};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExtensionProfile {
+    #[serde(default)]
+    pub schema_version: Option<String>,
     pub name: String,
     #[serde(default)]
     pub default_library: Option<String>,
@@ -53,6 +55,7 @@ pub struct CandidateTypeMapping {
 
 impl ExtensionProfile {
     pub fn validate(&self) -> std::result::Result<(), ProfileValidationError> {
+        validate_optional_text("schema_version", self.schema_version.as_deref())?;
         validate_optional_text("name", Some(&self.name))?;
         validate_optional_text("default_library", self.default_library.as_deref())?;
         self.tokenizer.validate()?;
@@ -139,6 +142,7 @@ mod tests {
     #[test]
     fn validates_synthetic_extension_profile() {
         let profile = ExtensionProfile {
+            schema_version: Some("1".to_string()),
             name: "example-extension".to_string(),
             default_library: Some("documents".to_string()),
             tokenizer: TokenizerConfig {
@@ -172,6 +176,7 @@ mod tests {
     #[test]
     fn rejects_empty_custom_terms() {
         let profile = ExtensionProfile {
+            schema_version: None,
             name: "example-extension".to_string(),
             tokenizer: TokenizerConfig {
                 custom_terms: vec![" ".to_string()],

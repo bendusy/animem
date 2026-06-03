@@ -4,6 +4,8 @@ use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocalProfile {
+    #[serde(default)]
+    pub schema_version: Option<String>,
     pub name: String,
     #[serde(default)]
     pub sources: Vec<DataSource>,
@@ -66,6 +68,7 @@ impl std::error::Error for ProfileValidationError {}
 
 impl LocalProfile {
     pub fn validate(&self) -> std::result::Result<(), ProfileValidationError> {
+        validate_optional_text("schema_version", self.schema_version.as_deref())?;
         validate_non_empty("name", &self.name)?;
         if self.sources.is_empty() {
             return Err(ProfileValidationError {
@@ -156,6 +159,16 @@ fn validate_non_empty(
     Ok(())
 }
 
+fn validate_optional_text(
+    field: &'static str,
+    value: Option<&str>,
+) -> std::result::Result<(), ProfileValidationError> {
+    if let Some(value) = value {
+        validate_non_empty(field, value)?;
+    }
+    Ok(())
+}
+
 fn validate_token(
     field: &'static str,
     value: &str,
@@ -180,6 +193,7 @@ mod tests {
     #[test]
     fn validates_synthetic_profile() {
         let profile = LocalProfile {
+            schema_version: Some("1".to_string()),
             name: "example".to_string(),
             sources: vec![DataSource {
                 source_id: "policy-memos".to_string(),
@@ -202,6 +216,7 @@ mod tests {
     #[test]
     fn rejects_missing_sources() {
         let profile = LocalProfile {
+            schema_version: None,
             name: "example".to_string(),
             sources: vec![],
             maintenance: MaintenancePolicy::default(),
@@ -215,6 +230,7 @@ mod tests {
     #[test]
     fn builds_relative_source_reference() {
         let profile = LocalProfile {
+            schema_version: Some("1".to_string()),
             name: "example".to_string(),
             sources: vec![DataSource {
                 source_id: "policy-memos".to_string(),
