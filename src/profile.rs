@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LocalProfile {
@@ -78,6 +79,22 @@ impl LocalProfile {
         validate_non_empty("maintenance.batch_prefix", &self.maintenance.batch_prefix)?;
         Ok(())
     }
+
+    pub fn source_ref(
+        &self,
+        source_id: &str,
+        path: impl AsRef<Path>,
+    ) -> std::result::Result<String, ProfileValidationError> {
+        let source = self
+            .sources
+            .iter()
+            .find(|source| source.source_id == source_id)
+            .ok_or_else(|| ProfileValidationError {
+                field: "sources.source_id",
+                message: format!("unknown source_id '{}'", source_id),
+            })?;
+        source.source_ref(path, self.path_privacy)
+    }
 }
 
 impl DataSource {
@@ -89,6 +106,40 @@ impl DataSource {
             validate_token("sources.include_extensions", ext)?;
         }
         Ok(())
+    }
+
+    pub fn source_ref(
+        &self,
+        path: impl AsRef<Path>,
+        privacy: PathPrivacy,
+    ) -> std::result::Result<String, ProfileValidationError> {
+        let path = path.as_ref();
+        match privacy {
+            PathPrivacy::StoreFullPath => Ok(path.to_string_lossy().to_string()),
+            PathPrivacy::StoreLabelOnly => {
+                let name = path
+                    .file_name()
+                    .map(|name| name.to_string_lossy().to_string())
+                    .ok_or_else(|| ProfileValidationError {
+                        field: "path",
+                        message: "path has no file name".to_string(),
+                    })?;
+                Ok(format!("{}:{}", self.source_id, name))
+            }
+            PathPrivacy::StoreRelativePath => {
+                let rel = path
+                    .strip_prefix(&self.root)
+                    .map_err(|_| ProfileValidationError {
+                        field: "path",
+                        message: "path is outside configured source root".to_string(),
+                    })?;
+                Ok(format!(
+                    "{}:{}",
+                    self.source_id,
+                    rel.to_string_lossy().trim_start_matches('/')
+                ))
+            }
+        }
     }
 }
 
@@ -159,5 +210,42 @@ mod tests {
 
         let err = profile.validate().unwrap_err();
         assert_eq!(err.field, "sources");
+    }
+
+    #[test]
+    fn builds_relative_source_reference() {
+        let profile = LocalProfile {
+            name: "example".to_string(),
+            sources: vec![DataSource {
+                source_id: "policy-memos".to_string(),
+                label: "Policy Memo Samples".to_string(),
+                root: "/example/private/source".to_string(),
+                include_extensions: vec!["md".to_string()],
+                exclude_globs: vec![],
+            }],
+            maintenance: MaintenancePolicy::default(),
+            path_privacy: PathPrivacy::StoreRelativePath,
+        };
+
+        let reference = profile
+            .source_ref("policy-memos", "/example/private/source/a/b.md")
+            .unwrap();
+        assert_eq!(reference, "policy-memos:a/b.md");
+    }
+
+    #[test]
+    fn rejects_relative_reference_outside_root() {
+        let source = DataSource {
+            source_id: "notes".to_string(),
+            label: "Notes".to_string(),
+            root: "/example/private/source".to_string(),
+            include_extensions: vec!["md".to_string()],
+            exclude_globs: vec![],
+        };
+
+        let err = source
+            .source_ref("/example/other/file.md", PathPrivacy::StoreRelativePath)
+            .unwrap_err();
+        assert_eq!(err.field, "path");
     }
 }

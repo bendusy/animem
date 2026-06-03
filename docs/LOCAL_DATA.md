@@ -27,6 +27,10 @@ private-animem-maintenance/
 - private maintenance repo: source roots, batch names, redaction maps, runbooks;
 - private data store: documents, caches, embeddings, database dumps.
 
-The maintenance repo should pass profile values into CLI tools or adapters.
-Source roots, hostnames, credentials, organization names, and real examples
-must not move into public code.
+The maintenance repo should load a private profile, turn it into a
+`MaintenancePlan`, and pass only that plan into CLI tools or adapters. Source
+roots, hostnames, credentials, organization names, and real examples must not
+move into public code.
+
+Default behavior should use `PathPrivacy::StoreRelativePath`: persisted
+references look like `source-id:relative/path.ext`, not absolute local paths.

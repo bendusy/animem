@@ -58,3 +58,6 @@ See [docs/REDACTION_POLICY.md](docs/REDACTION_POLICY.md).
 
 Local data maintenance is handled through private profiles outside this
 repository. See [docs/LOCAL_DATA.md](docs/LOCAL_DATA.md).
+
+The replacement path for older `mf` maintenance code is tracked in
+[docs/MIGRATION_FROM_MF.md](docs/MIGRATION_FROM_MF.md).
