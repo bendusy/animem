@@ -107,12 +107,47 @@ fn profile_validate_rejects_missing_sources() {
     );
 }
 
+#[test]
+fn profile_validate_rejects_unknown_extension() {
+    let path = temp_path("animem-profile", "txt");
+    fs::write(
+        &path,
+        r#"{
+  "schema_version": "1",
+  "name": "example",
+  "sources": []
+}"#,
+    )
+    .expect("write temp profile");
+
+    let output = animem()
+        .args(["profile", "validate", path.to_str().unwrap()])
+        .output()
+        .expect("run animem profile validate");
+
+    let _ = fs::remove_file(&path);
+
+    assert!(!output.status.success());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("unsupported profile file extension"),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 fn temp_json_path(prefix: &str) -> std::path::PathBuf {
+    temp_path(prefix, "json")
+}
+
+fn temp_path(prefix: &str, extension: &str) -> std::path::PathBuf {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("system time after epoch")
         .as_nanos();
-    std::env::temp_dir().join(format!("{prefix}-{}-{nanos}.json", std::process::id()))
+    std::env::temp_dir().join(format!(
+        "{prefix}-{}-{nanos}.{extension}",
+        std::process::id()
+    ))
 }
 
 fn assert_stdout(output: std::process::Output, expected: &str) {

@@ -57,8 +57,10 @@ where
         source,
     })?;
     match path.extension().and_then(|extension| extension.to_str()) {
+        Some("json") => serde_json::from_str(&raw).map_err(CliError::Json),
         Some("toml") => toml::from_str(&raw).map_err(CliError::Toml),
-        _ => serde_json::from_str(&raw).map_err(CliError::Json),
+        Some(extension) => Err(CliError::UnsupportedExtension(extension.to_string())),
+        None => Err(CliError::MissingExtension),
     }
 }
 
@@ -82,6 +84,8 @@ enum CliError {
     },
     Json(serde_json::Error),
     Toml(toml::de::Error),
+    UnsupportedExtension(String),
+    MissingExtension,
     Profile(ProfileValidationError),
 }
 
@@ -95,6 +99,12 @@ impl std::fmt::Display for CliError {
             CliError::Read { path, source } => write!(f, "failed to read {path}: {source}"),
             CliError::Json(err) => write!(f, "invalid JSON: {err}"),
             CliError::Toml(err) => write!(f, "invalid TOML: {err}"),
+            CliError::UnsupportedExtension(extension) => {
+                write!(f, "unsupported profile file extension: {extension}")
+            }
+            CliError::MissingExtension => {
+                write!(f, "profile file must use .json or .toml extension")
+            }
             CliError::Profile(err) => write!(f, "invalid profile: {err}"),
         }
     }
