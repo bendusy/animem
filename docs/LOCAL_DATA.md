@@ -46,6 +46,6 @@ Rust:
 - `promotion.candidate_type_mappings` for mapping extraction candidates into
   local memory types.
 
-The tracked example at `examples/extension-profile.example.json` is fully
-synthetic. Real extension profiles should be ignored by git and loaded by the
-private adapter at runtime.
+The tracked examples at `examples/profile.example.{json,toml}` and
+`examples/extension-profile.example.{json,toml}` are fully synthetic. Real
+profiles should be ignored by git and loaded by the private adapter at runtime.

@@ -1,0 +1,33 @@
+schema_version = "1"
+name = "example-extension"
+default_library = "documents"
+
+[tokenizer]
+custom_terms = ["Project Alpha", "Review Packet"]
+
+[card_rules]
+organization_terms = ["Example Org", "Sample Team"]
+
+[[card_rules.document_type_patterns]]
+contains = "memo"
+value = "memo"
+
+[[card_rules.document_type_patterns]]
+contains = "decision record"
+value = "decision_record"
+
+[promotion]
+source_agent = "example-adapter"
+context_project = "example-project"
+
+[[promotion.candidate_type_mappings]]
+candidate_kind = "procedure"
+experience_type = "procedure"
+
+[[promotion.candidate_type_mappings]]
+candidate_kind = "template"
+experience_type = "template"
+
+[[promotion.candidate_type_mappings]]
+candidate_kind = "rule"
+experience_type = "rule"

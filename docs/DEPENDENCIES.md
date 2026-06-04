@@ -8,6 +8,7 @@
 |---|---|---|
 | `serde` | stable structs for caller-owned persistence | low |
 | `serde_json` | JSON payloads for candidates and tests | low |
+| `toml` | TOML profile and extension files for local maintenance configs | low |
 | `sha2` | deterministic asset and section identifiers | low |
 | `regex` | conservative heading and numbering detection | low |
 | `thiserror` | typed library errors | low |

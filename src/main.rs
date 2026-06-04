@@ -26,19 +26,19 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             Ok(())
         }
         [group, command, path] if group == "profile" && command == "validate" => {
-            let profile: LocalProfile = read_json(path)?;
+            let profile: LocalProfile = read_profile(path)?;
             profile.validate()?;
             println!("profile valid: {}", profile.name);
             Ok(())
         }
         [group, command, path] if group == "extension" && command == "validate" => {
-            let profile: ExtensionProfile = read_json(path)?;
+            let profile: ExtensionProfile = read_profile(path)?;
             profile.validate()?;
             println!("extension profile valid: {}", profile.name);
             Ok(())
         }
         [command, path] if command == "plan" => {
-            let profile: LocalProfile = read_json(path)?;
+            let profile: LocalProfile = read_profile(path)?;
             let plan = MaintenancePlan::from_profile(&profile)?;
             println!("{}", serde_json::to_string_pretty(&plan)?);
             Ok(())
@@ -47,7 +47,7 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
     }
 }
 
-fn read_json<T>(path: impl AsRef<Path>) -> Result<T, CliError>
+fn read_profile<T>(path: impl AsRef<Path>) -> Result<T, CliError>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -56,15 +56,20 @@ where
         path: path.display().to_string(),
         source,
     })?;
-    serde_json::from_str(&raw).map_err(CliError::Json)
+    match path.extension().and_then(|extension| extension.to_str()) {
+        Some("toml") => toml::from_str(&raw).map_err(CliError::Toml),
+        _ => serde_json::from_str(&raw).map_err(CliError::Json),
+    }
 }
 
 fn print_usage() {
     println!(
         "Usage:
   animem profile validate <profile.json>
+  animem profile validate <profile.toml>
   animem extension validate <extension-profile.json>
-  animem plan <profile.json>"
+  animem extension validate <extension-profile.toml>
+  animem plan <profile.json|profile.toml>"
     );
 }
 
@@ -76,6 +81,7 @@ enum CliError {
         source: std::io::Error,
     },
     Json(serde_json::Error),
+    Toml(toml::de::Error),
     Profile(ProfileValidationError),
 }
 
@@ -88,6 +94,7 @@ impl std::fmt::Display for CliError {
             ),
             CliError::Read { path, source } => write!(f, "failed to read {path}: {source}"),
             CliError::Json(err) => write!(f, "invalid JSON: {err}"),
+            CliError::Toml(err) => write!(f, "invalid TOML: {err}"),
             CliError::Profile(err) => write!(f, "invalid profile: {err}"),
         }
     }
@@ -98,6 +105,12 @@ impl std::error::Error for CliError {}
 impl From<serde_json::Error> for CliError {
     fn from(value: serde_json::Error) -> Self {
         CliError::Json(value)
+    }
+}
+
+impl From<toml::de::Error> for CliError {
+    fn from(value: toml::de::Error) -> Self {
+        CliError::Toml(value)
     }
 }
 

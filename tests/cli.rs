@@ -8,41 +8,53 @@ fn animem() -> Command {
 
 #[test]
 fn profile_validate_accepts_example_profile() {
-    let output = animem()
-        .args(["profile", "validate", "examples/profile.example.json"])
-        .output()
-        .expect("run animem profile validate");
-
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
+    assert_stdout(
+        animem()
+            .args(["profile", "validate", "examples/profile.example.json"])
+            .output()
+            .expect("run animem profile validate"),
+        "profile valid: example\n",
     );
-    assert_eq!(
-        String::from_utf8_lossy(&output.stdout),
-        "profile valid: example\n"
+}
+
+#[test]
+fn profile_validate_accepts_toml_profile() {
+    assert_stdout(
+        animem()
+            .args(["profile", "validate", "examples/profile.example.toml"])
+            .output()
+            .expect("run animem profile validate"),
+        "profile valid: example\n",
     );
 }
 
 #[test]
 fn extension_validate_accepts_example_profile() {
-    let output = animem()
-        .args([
-            "extension",
-            "validate",
-            "examples/extension-profile.example.json",
-        ])
-        .output()
-        .expect("run animem extension validate");
-
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
+    assert_stdout(
+        animem()
+            .args([
+                "extension",
+                "validate",
+                "examples/extension-profile.example.json",
+            ])
+            .output()
+            .expect("run animem extension validate"),
+        "extension profile valid: example-extension\n",
     );
-    assert_eq!(
-        String::from_utf8_lossy(&output.stdout),
-        "extension profile valid: example-extension\n"
+}
+
+#[test]
+fn extension_validate_accepts_toml_profile() {
+    assert_stdout(
+        animem()
+            .args([
+                "extension",
+                "validate",
+                "examples/extension-profile.example.toml",
+            ])
+            .output()
+            .expect("run animem extension validate"),
+        "extension profile valid: example-extension\n",
     );
 }
 
@@ -53,18 +65,17 @@ fn plan_prints_maintenance_plan_json() {
         .output()
         .expect("run animem plan");
 
-    assert!(
-        output.status.success(),
-        "stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
+    assert_plan_output(output);
+}
 
-    let json: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("plan output is json");
-    assert_eq!(json["profile_name"], "example");
-    assert_eq!(json["dry_run_required"], true);
-    assert_eq!(json["jobs"][0]["source_id"], "policy-memos");
-    assert_eq!(json["jobs"][0]["write_source_paths"], false);
+#[test]
+fn plan_accepts_toml_profile() {
+    let output = animem()
+        .args(["plan", "examples/profile.example.toml"])
+        .output()
+        .expect("run animem plan");
+
+    assert_plan_output(output);
 }
 
 #[test]
@@ -102,4 +113,28 @@ fn temp_json_path(prefix: &str) -> std::path::PathBuf {
         .expect("system time after epoch")
         .as_nanos();
     std::env::temp_dir().join(format!("{prefix}-{}-{nanos}.json", std::process::id()))
+}
+
+fn assert_stdout(output: std::process::Output, expected: &str) {
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(String::from_utf8_lossy(&output.stdout), expected);
+}
+
+fn assert_plan_output(output: std::process::Output) {
+    assert!(
+        output.status.success(),
+        "stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let json: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("plan output is json");
+    assert_eq!(json["profile_name"], "example");
+    assert_eq!(json["dry_run_required"], true);
+    assert_eq!(json["jobs"][0]["source_id"], "policy-memos");
+    assert_eq!(json["jobs"][0]["write_source_paths"], false);
 }
