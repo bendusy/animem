@@ -12,7 +12,9 @@ mod extension;
 mod ids;
 mod maintenance;
 mod profile;
+mod schema;
 mod splitter;
+mod store;
 
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
@@ -26,4 +28,10 @@ pub use maintenance::{MaintenanceJob, MaintenancePlan};
 pub use profile::{
     DataSource, LocalProfile, MaintenancePolicy, PathPrivacy, ProfileValidationError,
 };
+pub use schema::{SchemaArtifact, SchemaArtifactFile, SchemaArtifactKind};
 pub use splitter::{split_sections, SplitOptions};
+pub use store::{
+    DocumentAssetFilter, DocumentAssetPage, DocumentSearchHit, DocumentSearchHitKind,
+    DocumentSearchRequest, DocumentSearchResult, DocumentSearchStore, DocumentStore, StoreError,
+    StoreFuture,
+};
