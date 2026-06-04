@@ -151,6 +151,23 @@ mod tests {
     }
 
     #[test]
+    fn returns_single_section_when_headings_are_too_short() {
+        let text = "# A\nshort\n# B\nalso short";
+        let sections = split_sections(
+            "asset-1",
+            text,
+            SplitOptions {
+                min_section_chars: 100,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(sections.len(), 1);
+        assert_eq!(sections[0].heading, None);
+        assert_eq!(sections[0].text, text);
+    }
+
+    #[test]
     fn rejects_empty_input() {
         let err = split_sections("asset-1", "   ", SplitOptions::default()).unwrap_err();
         assert_eq!(err, AnimemError::EmptyInput);
