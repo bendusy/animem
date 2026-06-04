@@ -6,7 +6,7 @@
     "custom_terms": ["Project Alpha", "Review Packet"]
   },
   "card_rules": {
-    "organization_terms": ["Example Org", "Sample Team"],
+    "entity_terms": ["Example Entity", "Sample Team"],
     "document_type_patterns": [
       {
         "contains": "memo",
@@ -33,7 +33,7 @@
         "experience_type": "rule"
       }
     ],
-    "source_agent": "example-adapter",
-    "context_project": "example-project"
+    "source_id": "example-source",
+    "context_scope": "example-workspace"
   }
 }

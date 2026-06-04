@@ -29,8 +29,8 @@ private-animem-maintenance/
 
 The maintenance repo should load a private profile, turn it into a
 `MaintenancePlan`, and pass only that plan into CLI tools or adapters. Source
-roots, hostnames, credentials, organization names, and real examples must not
-move into public code.
+roots, hostnames, credentials, entity names, and real examples must not move
+into public code.
 
 Default behavior should use `PathPrivacy::StoreRelativePath`: persisted
 references look like `source-id:relative/path.ext`, not absolute local paths.
@@ -41,7 +41,7 @@ Use `ExtensionProfile` for local rules that would otherwise become hard-coded
 Rust:
 
 - `tokenizer.custom_terms` for local terminology;
-- `card_rules.organization_terms` for organization detection;
+- `card_rules.entity_terms` for local entity detection;
 - `card_rules.document_type_patterns` for local document types;
 - `promotion.candidate_type_mappings` for mapping extraction candidates into
   local memory types.

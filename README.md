@@ -48,7 +48,7 @@ bash scripts/check-source-bundle-allowlist /tmp/animem-package-list.txt
 ## Non-Goals
 
 - No private deployment runbooks.
-- No real organization dictionaries.
+- No real entity dictionaries.
 - No real document examples.
 - No checked-in caches, embeddings, databases, or evaluation exports.
 - No inherited history from private repositories.

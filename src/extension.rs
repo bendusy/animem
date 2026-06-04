@@ -25,8 +25,9 @@ pub struct TokenizerConfig {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CardRulePack {
-    #[serde(default)]
-    pub organization_terms: Vec<String>,
+    // Legacy aliases are deserialize-only; serialization emits neutral field names.
+    #[serde(default, alias = "organization_terms")]
+    pub entity_terms: Vec<String>,
     #[serde(default)]
     pub document_type_patterns: Vec<TextPattern>,
 }
@@ -41,10 +42,11 @@ pub struct TextPattern {
 pub struct PromotionPolicy {
     #[serde(default)]
     pub candidate_type_mappings: Vec<CandidateTypeMapping>,
-    #[serde(default)]
-    pub source_agent: Option<String>,
-    #[serde(default)]
-    pub context_project: Option<String>,
+    // Legacy aliases are deserialize-only; serialization emits neutral field names.
+    #[serde(default, alias = "source_agent")]
+    pub source_id: Option<String>,
+    #[serde(default, alias = "context_project")]
+    pub context_scope: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -81,7 +83,7 @@ impl TokenizerConfig {
 
 impl CardRulePack {
     pub fn validate(&self) -> std::result::Result<(), ProfileValidationError> {
-        validate_list("card_rules.organization_terms", &self.organization_terms)?;
+        validate_list("card_rules.entity_terms", &self.entity_terms)?;
         for pattern in &self.document_type_patterns {
             validate_optional_text(
                 "card_rules.document_type_patterns.contains",
@@ -98,8 +100,8 @@ impl CardRulePack {
 
 impl PromotionPolicy {
     pub fn validate(&self) -> std::result::Result<(), ProfileValidationError> {
-        validate_optional_text("promotion.source_agent", self.source_agent.as_deref())?;
-        validate_optional_text("promotion.context_project", self.context_project.as_deref())?;
+        validate_optional_text("promotion.source_id", self.source_id.as_deref())?;
+        validate_optional_text("promotion.context_scope", self.context_scope.as_deref())?;
         for mapping in &self.candidate_type_mappings {
             validate_optional_text(
                 "promotion.candidate_type_mappings.experience_type",
@@ -149,7 +151,7 @@ mod tests {
                 custom_terms: vec!["Project Alpha".to_string()],
             },
             card_rules: CardRulePack {
-                organization_terms: vec!["Example Org".to_string()],
+                entity_terms: vec!["Example Org".to_string()],
                 document_type_patterns: vec![TextPattern {
                     contains: "memo".to_string(),
                     value: "memo".to_string(),
@@ -160,8 +162,8 @@ mod tests {
                     candidate_kind: CandidateKind::Procedure,
                     experience_type: "procedure".to_string(),
                 }],
-                source_agent: Some("example-adapter".to_string()),
-                context_project: Some("example-project".to_string()),
+                source_id: Some("example-source".to_string()),
+                context_scope: Some("example-workspace".to_string()),
             },
         };
 
@@ -171,6 +173,64 @@ mod tests {
             Some("procedure")
         );
         assert_eq!(profile.experience_type_for(CandidateKind::Fact), None);
+    }
+
+    #[test]
+    fn accepts_legacy_extension_field_names() {
+        let profile: ExtensionProfile = serde_json::from_str(
+            r#"{
+  "schema_version": "1",
+  "name": "legacy-extension",
+  "card_rules": {
+    "organization_terms": ["Example Org"]
+  },
+  "promotion": {
+    "source_agent": "example-source",
+    "context_project": "example-workspace"
+  }
+}"#,
+        )
+        .unwrap();
+
+        assert_eq!(profile.card_rules.entity_terms, vec!["Example Org"]);
+        assert_eq!(
+            profile.promotion.source_id.as_deref(),
+            Some("example-source")
+        );
+        assert_eq!(
+            profile.promotion.context_scope.as_deref(),
+            Some("example-workspace")
+        );
+        profile.validate().unwrap();
+    }
+
+    #[test]
+    fn accepts_legacy_toml_extension_field_names() {
+        let profile: ExtensionProfile = toml::from_str(
+            r#"
+schema_version = "1"
+name = "legacy-extension"
+
+[card_rules]
+organization_terms = ["Example Org"]
+
+[promotion]
+source_agent = "example-source"
+context_project = "example-workspace"
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(profile.card_rules.entity_terms, vec!["Example Org"]);
+        assert_eq!(
+            profile.promotion.source_id.as_deref(),
+            Some("example-source")
+        );
+        assert_eq!(
+            profile.promotion.context_scope.as_deref(),
+            Some("example-workspace")
+        );
+        profile.validate().unwrap();
     }
 
     #[test]

@@ -6,7 +6,7 @@ default_library = "documents"
 custom_terms = ["Project Alpha", "Review Packet"]
 
 [card_rules]
-organization_terms = ["Example Org", "Sample Team"]
+entity_terms = ["Example Entity", "Sample Team"]
 
 [[card_rules.document_type_patterns]]
 contains = "memo"
@@ -17,8 +17,8 @@ contains = "decision record"
 value = "decision_record"
 
 [promotion]
-source_agent = "example-adapter"
-context_project = "example-project"
+source_id = "example-source"
+context_scope = "example-workspace"
 
 [[promotion.candidate_type_mappings]]
 candidate_kind = "procedure"
