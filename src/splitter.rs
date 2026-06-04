@@ -1,8 +1,14 @@
 use regex::Regex;
+use std::sync::LazyLock;
 
 use crate::document::DocumentSection;
 use crate::error::{AnimemError, Result};
 use crate::ids;
+
+static MARKDOWN_HEADING: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^#{1,6}\s+(.+)$").expect("valid regex"));
+static NUMBERED_HEADING: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(\d+\.|[A-Z]\.|[IVX]+\.)\s+(.+)$").expect("valid regex"));
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SplitOptions {
@@ -28,15 +34,7 @@ pub fn split_sections(
 
     let headings = heading_offsets(text);
     if headings.is_empty() {
-        return Ok(vec![DocumentSection {
-            section_id: ids::section_id(asset_id, 1),
-            asset_id: asset_id.to_string(),
-            ordinal: 1,
-            heading: None,
-            text: text.trim().to_string(),
-            char_start: 0,
-            char_end: text.chars().count(),
-        }]);
+        return Ok(vec![single_section(asset_id, text)]);
     }
 
     let char_positions = byte_to_char_positions(text);
@@ -64,30 +62,32 @@ pub fn split_sections(
     }
 
     if sections.is_empty() {
-        return Ok(vec![DocumentSection {
-            section_id: ids::section_id(asset_id, 1),
-            asset_id: asset_id.to_string(),
-            ordinal: 1,
-            heading: None,
-            text: text.trim().to_string(),
-            char_start: 0,
-            char_end: text.chars().count(),
-        }]);
+        return Ok(vec![single_section(asset_id, text)]);
     }
     Ok(sections)
 }
 
+fn single_section(asset_id: &str, text: &str) -> DocumentSection {
+    DocumentSection {
+        section_id: ids::section_id(asset_id, 1),
+        asset_id: asset_id.to_string(),
+        ordinal: 1,
+        heading: None,
+        text: text.trim().to_string(),
+        char_start: 0,
+        char_end: text.chars().count(),
+    }
+}
+
 fn heading_offsets(text: &str) -> Vec<(usize, String)> {
-    let markdown = Regex::new(r"^#{1,6}\s+(.+)$").expect("valid regex");
-    let numbered = Regex::new(r"^(\d+\.|[A-Z]\.|[IVX]+\.)\s+(.+)$").expect("valid regex");
     let mut out = Vec::new();
     let mut offset = 0usize;
     for line in text.lines() {
-        let heading = markdown
+        let heading = MARKDOWN_HEADING
             .captures(line)
             .and_then(|c| c.get(1).map(|m| m.as_str().trim().to_string()))
             .or_else(|| {
-                numbered
+                NUMBERED_HEADING
                     .captures(line)
                     .and_then(|c| c.get(2).map(|m| m.as_str().trim().to_string()))
             });
