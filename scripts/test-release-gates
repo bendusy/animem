@@ -45,7 +45,7 @@ expect_fail "source bundle tracked private path" \
 git reset -q -- cache/tracked.json
 rm -f cache/tracked.json
 
-printf '%s\n' "$PWD/README.md" > manifest-absolute-path.txt
+printf '%s\n' "$(git rev-parse --show-toplevel)/README.md" > manifest-absolute-path.txt
 expect_fail "source bundle absolute path" \
   bash scripts/check-source-bundle-allowlist manifest-absolute-path.txt
 
