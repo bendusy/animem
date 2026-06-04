@@ -39,8 +39,10 @@ Recommended local checks before sending a change:
 cargo fmt -- --check
 cargo clippy --all-targets -- -D warnings
 cargo test --all
+bash scripts/test-release-gates
 ./scripts/scan-sensitive.sh
-cargo package --allow-dirty --no-verify --list
+cargo package --allow-dirty --no-verify --list >/tmp/animem-package-list.txt
+bash scripts/check-source-bundle-allowlist /tmp/animem-package-list.txt
 ```
 
 ## Non-Goals

@@ -7,19 +7,11 @@ patterns=(
   'sk-[A-Za-z0-9_-]{8,}'
   'Bearer [A-Za-z0-9._:-]{16,}'
   '10\.[0-9]+\.[0-9]+\.[0-9]+'
+  '172\.(1[6-9]|2[0-9]|3[0-1])\.[0-9]+\.[0-9]+'
   '192\.168\.[0-9]+\.[0-9]+'
   '/Users/[^ ]+'
   '/home/[^ ]+'
   '/vol[0-9]+/'
-  'axis'
-  'memory-flow'
-  'yihub'
-  'oMLX'
-  'Qwen'
-  'mf-(rust|mcp|server|worker|core|cli)'
-  '综合二科'
-  '云浮'
-  '市委'
 )
 
 scan_args=(
@@ -37,17 +29,23 @@ for pattern in "${patterns[@]}"; do
   fi
 done
 
-package_list=$(cargo package --allow-dirty --no-verify --list)
-while IFS= read -r package_file; do
-  case "$package_file" in
-    "" ) ;;
-    Cargo.toml.orig ) ;;
-    *.orig|*.bak|*.env|*.env.*|*.local.*|*.private.*|cache/*|data/*|scratch/*|tmp/*|target/*|memory-flow/*|*/memory-flow/* )
-      echo "sensitive package entry: $package_file" >&2
+if [[ -n "${ANIMEM_PUBLIC_DENYLIST:-}" ]]; then
+  if [[ ! -f "$ANIMEM_PUBLIC_DENYLIST" ]]; then
+    echo "ANIMEM_PUBLIC_DENYLIST is not a file" >&2
+    exit 64
+  fi
+  while IFS= read -r term; do
+    [[ -z "$term" || "$term" == \#* ]] && continue
+    if rg -n --fixed-strings "${scan_args[@]}" -- "$term" .; then
       status=1
-      ;;
-  esac
-done <<< "$package_list"
+    fi
+  done < "$ANIMEM_PUBLIC_DENYLIST"
+fi
+
+package_list="$(mktemp "${TMPDIR:-/tmp}/animem-package-list.XXXXXX")"
+trap 'rm -f "$package_list"' EXIT
+cargo package --allow-dirty --no-verify --list >"$package_list"
+bash scripts/check-source-bundle-allowlist "$package_list" || status=1
 
 if [[ "$status" -ne 0 ]]; then
   echo "sensitive scan failed" >&2

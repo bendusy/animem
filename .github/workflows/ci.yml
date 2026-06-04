@@ -16,5 +16,7 @@ jobs:
       - run: cargo fmt -- --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --all
+      - run: bash scripts/test-release-gates
       - run: bash scripts/scan-sensitive.sh
       - run: cargo package --allow-dirty --no-verify --list >/tmp/animem-package-list.txt
+      - run: bash scripts/check-source-bundle-allowlist /tmp/animem-package-list.txt

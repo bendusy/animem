@@ -14,10 +14,11 @@ include = [
     "tests/**/*",
     "docs/**/*",
     "examples/**/*",
+    "scripts/check-source-bundle-allowlist",
     "scripts/scan-sensitive.sh",
+    "scripts/test-release-gates",
     ".github/workflows/ci.yml",
     "Cargo.toml",
-    "Cargo.lock",
     "LICENSE",
     "README.md",
 ]

@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 1 ]]; then
+  printf 'usage: %s <source-bundle-file-list>\n' "$0" >&2
+  exit 64
+fi
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+entries_file="$(mktemp "${TMPDIR:-/tmp}/animem-source-list.XXXXXX")"
+trap 'rm -f "$entries_file"' EXIT
+
+python3 - "$1" >"$entries_file" <<'PY'
+import sys
+
+with open(sys.argv[1], "rb") as fh:
+    raw = fh.read()
+
+entries = raw.split(b"\0") if b"\0" in raw else raw.splitlines()
+for item in entries:
+    path = item.decode("utf-8", "replace").strip()
+    if path:
+        print(path)
+PY
+
+normalize_path() {
+  local path="$1"
+  local repo_root
+  repo_root="$(git rev-parse --show-toplevel)"
+
+  if [[ "$path" == "$repo_root/"* ]]; then
+    path="${path#$repo_root/}"
+  elif [[ "$path" == /* ]]; then
+    printf 'source-bundle leak absolute-path %s\n' "$path" >&2
+    return 1
+  fi
+
+  path="${path#./}"
+  printf '%s\n' "$path"
+}
+
+is_generated_package_entry() {
+  case "$1" in
+    .cargo_vcs_info.json|Cargo.lock|Cargo.toml.orig) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_disallowed_entry() {
+  case "$1" in
+    .git/*|target/*|cache/*|data/*|scratch/*|tmp/*) return 0 ;;
+    *.env|*.env.*|*.local.*|*.private.*|*.secret.*|*.bak|*.orig) return 0 ;;
+    *.db|*.db-*|*.dump|*.sqlite|*.sqlite3) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+status=0
+while IFS= read -r raw_path; do
+  path="$(normalize_path "$raw_path")" || {
+    status=1
+    continue
+  }
+  [[ -n "$path" ]] || continue
+
+  if is_generated_package_entry "$path"; then
+    continue
+  fi
+
+  if is_disallowed_entry "$path"; then
+    printf 'source-bundle leak disallowed-entry %s\n' "$path" >&2
+    status=1
+    continue
+  fi
+
+  if ! git ls-files --full-name --error-unmatch -- "$path" >/dev/null 2>&1; then
+    printf 'source-bundle leak not-tracked %s\n' "$path" >&2
+    status=1
+  fi
+done <"$entries_file"
+
+[[ "$status" -eq 0 ]] || exit "$status"
+printf 'source bundle allowlist passed\n'

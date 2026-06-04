@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/animem-release-gates.XXXXXX")"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+expect_fail() {
+  local label="$1"
+  shift
+  if "$@" >/dev/null 2>&1; then
+    printf 'unexpected success: %s\n' "$label" >&2
+    exit 1
+  fi
+  printf 'PASS negative %s\n' "$label"
+}
+
+cp -R "$repo_root/scripts" "$tmp_dir/scripts"
+cd "$tmp_dir"
+git init -q
+git config user.email test@example.invalid
+git config user.name "Animem Gate Test"
+printf '# temp animem\n' > README.md
+git add README.md scripts
+
+printf 'README.md\n' > manifest.txt
+bash scripts/check-source-bundle-allowlist manifest.txt
+
+printf 'README.md\0' > manifest-nul.txt
+bash scripts/check-source-bundle-allowlist manifest-nul.txt
+
+printf '.cargo_vcs_info.json\nCargo.lock\nCargo.toml.orig\n' > manifest-generated.txt
+bash scripts/check-source-bundle-allowlist manifest-generated.txt
+
+printf 'cache/private.json\n' > manifest-untracked-private.txt
+expect_fail "source bundle untracked private path" \
+  bash scripts/check-source-bundle-allowlist manifest-untracked-private.txt
+
+mkdir -p cache
+printf '{}\n' > cache/tracked.json
+git add -f cache/tracked.json
+printf 'cache/tracked.json\n' > manifest-tracked-private.txt
+expect_fail "source bundle tracked private path" \
+  bash scripts/check-source-bundle-allowlist manifest-tracked-private.txt
+git reset -q -- cache/tracked.json
+rm -f cache/tracked.json
+
+printf '%s\n' "$PWD/README.md" > manifest-absolute-path.txt
+expect_fail "source bundle absolute path" \
+  bash scripts/check-source-bundle-allowlist manifest-absolute-path.txt
+
+printf 'TOKEN=placeholder\n' > profile.env
+git add -f profile.env
+printf 'profile.env\n' > manifest-env-suffix.txt
+expect_fail "source bundle env suffix" \
+  bash scripts/check-source-bundle-allowlist manifest-env-suffix.txt
+git reset -q -- profile.env
+rm -f profile.env
+
+printf 'debug placeholder\n' > local.db
+git add -f local.db
+printf 'local.db\n' > manifest-db-file.txt
+expect_fail "source bundle db file" \
+  bash scripts/check-source-bundle-allowlist manifest-db-file.txt
+git reset -q -- local.db
+rm -f local.db
+
+printf 'release gate regression passed\n'

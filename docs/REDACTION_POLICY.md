@@ -30,3 +30,8 @@ cargo test
 
 The scanner is intentionally conservative. Fix findings in public files rather
 than adding broad allowlists.
+
+Project-specific denylist terms must stay outside this repository. To run an
+extra local denylist, set `ANIMEM_PUBLIC_DENYLIST=/path/to/denylist.txt`; do not
+commit private organization, runtime, provider, or archive terms into public
+scripts.

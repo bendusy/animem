@@ -26,10 +26,11 @@ Run this before publishing or pushing a release candidate:
 cargo fmt --all -- --check
 cargo clippy --all-targets -- -D warnings
 cargo test --all
+bash scripts/test-release-gates
 bash scripts/scan-sensitive.sh
-cargo package --allow-dirty --no-verify --list
+cargo package --allow-dirty --no-verify --list >/tmp/animem-package-list.txt
+bash scripts/check-source-bundle-allowlist /tmp/animem-package-list.txt
 ```
 
 The scanner is a gate, not proof of safety. Review commit messages, tag names,
 release notes, examples, and documentation for private terms before release.
-
