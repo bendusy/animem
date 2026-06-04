@@ -1,0 +1,22 @@
+{
+  "schema_version": "animem.schema-artifact.v1",
+  "artifact_id": "artifact_example_001",
+  "source_repo": "example-schema-source",
+  "source_commit": "0123456789abcdef",
+  "files": [
+    {
+      "file_id": "migration_001",
+      "kind": "repeatable_migration",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "order": 1,
+      "reason": "example schema setup"
+    },
+    {
+      "file_id": "manifest_001",
+      "kind": "manifest",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "order": 2,
+      "reason": "example release manifest"
+    }
+  ]
+}

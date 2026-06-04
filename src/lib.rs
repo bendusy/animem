@@ -12,6 +12,7 @@ mod extension;
 mod ids;
 mod maintenance;
 mod profile;
+mod provenance;
 mod schema;
 mod splitter;
 mod store;
@@ -27,6 +28,10 @@ pub use ids::{asset_id, section_id};
 pub use maintenance::{MaintenanceJob, MaintenancePlan};
 pub use profile::{
     DataSource, LocalProfile, MaintenancePolicy, PathPrivacy, ProfileValidationError,
+};
+pub use provenance::{
+    ProvenanceEvent, ProvenanceEventKind, ProvenanceRef, ProvenanceRefKind, RedactedField,
+    RedactionState, RedactionSummary, PROVENANCE_EVENT_SCHEMA_VERSION,
 };
 pub use schema::{SchemaArtifact, SchemaArtifactFile, SchemaArtifactKind};
 pub use splitter::{split_sections, SplitOptions};

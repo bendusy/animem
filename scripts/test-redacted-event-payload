@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/animem-redaction.XXXXXX")"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+checker="$repo_root/scripts/check-redacted-event-payload"
+repo_bytecode_baseline="$tmp_dir/repo-bytecode-baseline.txt"
+find "$repo_root/scripts" \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) -print | sort >"$repo_bytecode_baseline"
+
+assert_no_bytecode() {
+  local current="$tmp_dir/repo-bytecode-current.txt"
+  find "$repo_root/scripts" \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) -print | sort >"$current"
+  if ! cmp -s "$repo_bytecode_baseline" "$current"; then
+    printf 'redaction checker wrote python bytecode cache under scripts/\n' >&2
+    exit 1
+  fi
+  if find "$tmp_dir" \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) -print -quit | grep -q .; then
+    printf 'redaction checker wrote python bytecode cache under temp dir\n' >&2
+    exit 1
+  fi
+}
+
+expect_fail_no_echo() {
+  local label="$1"
+  local payload="$2"
+  shift 2
+  local stderr_file="$tmp_dir/$label.stderr"
+  local stdout_file="$tmp_dir/$label.stdout"
+
+  if bash "$checker" "$payload" >"$stdout_file" 2>"$stderr_file"; then
+    printf 'unexpected success: %s\n' "$label" >&2
+    exit 1
+  fi
+
+  for forbidden in "$@"; do
+    if grep -F -q -- "$forbidden" "$stderr_file" || grep -F -q -- "$forbidden" "$stdout_file"; then
+      printf 'redaction failure echoed raw content: %s\n' "$label" >&2
+      exit 1
+    fi
+  done
+
+  printf 'PASS negative redaction %s\n' "$label"
+  assert_no_bytecode
+}
+
+write_json() {
+  local path="$1"
+  shift
+  python3 - "$path" "$@" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+items = sys.argv[2:]
+data = {}
+for item in items:
+    key, value = item.split("=", 1)
+    cursor = data
+    parts = key.split(".")
+    for part in parts[:-1]:
+        cursor = cursor.setdefault(part, {})
+    cursor[parts[-1]] = value
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, ensure_ascii=True, sort_keys=True)
+    fh.write("\n")
+PY
+}
+
+ok="$tmp_dir/ok.json"
+write_json "$ok" \
+  "schema_version=animem.provenance.event.v1" \
+  "event_id=event_example_001" \
+  "label=Project Alpha"
+bash "$checker" "$ok"
+assert_no_bytecode
+
+version_like="$tmp_dir/version-like.json"
+write_json "$version_like" "version=10.7.8"
+bash "$checker" "$version_like"
+assert_no_bytecode
+
+copied_scripts="$tmp_dir/scripts-copy"
+cp -R "$repo_root/scripts" "$copied_scripts"
+find "$copied_scripts" \( -name __pycache__ -o -name '*.pyc' -o -name '*.pyo' \) -exec rm -rf {} +
+bash "$copied_scripts/check-redacted-event-payload" "$ok"
+assert_no_bytecode
+
+shadow_dir="$tmp_dir/shadow-cwd"
+mkdir -p "$shadow_dir"
+printf 'def find_leaks(*_args, **_kwargs):\n    return []\n' >"$shadow_dir/redaction_policy.py"
+secret_value="$(printf 'sk-%s' abcdefghijklmnop)"
+payload="$tmp_dir/shadow-secret.json"
+write_json "$payload" "value=$secret_value"
+if (cd "$shadow_dir" && bash "$checker" "$payload" >"$tmp_dir/shadow.stdout" 2>"$tmp_dir/shadow.stderr"); then
+  printf 'shadowed redaction_policy.py bypassed checker\n' >&2
+  exit 1
+fi
+if grep -F -q -- "$secret_value" "$tmp_dir/shadow.stdout" "$tmp_dir/shadow.stderr"; then
+  printf 'shadow-cwd failure echoed raw content\n' >&2
+  exit 1
+fi
+printf 'PASS negative redaction shadow-cwd\n'
+assert_no_bytecode
+
+secret_value="$(printf 'Bearer %s%s' abcdefgh ijklmnop)"
+payload="$tmp_dir/credential-value.json"
+write_json "$payload" "auth.value=$secret_value"
+expect_fail_no_echo "credential-value" "$payload" "$secret_value"
+
+secret_key="apiKey"
+payload="$tmp_dir/camel-key.json"
+write_json "$payload" "$secret_key=redacted"
+expect_fail_no_echo "camel-key" "$payload" "$secret_key"
+
+secret_key="API_KEY"
+payload="$tmp_dir/upper-key.json"
+write_json "$payload" "$secret_key=redacted"
+expect_fail_no_echo "upper-key" "$payload" "$secret_key"
+
+for secret_key in path request response env model provider; do
+  payload="$tmp_dir/forbidden-$secret_key.json"
+  write_json "$payload" "$secret_key=redacted"
+  expect_fail_no_echo "forbidden-$secret_key" "$payload" "$secret_key"
+done
+
+secret_value="$(printf '10.%s.%s.%s' 7 8 9)"
+payload="$tmp_dir/private-ip.json"
+write_json "$payload" "network.addr=$secret_value"
+expect_fail_no_echo "private-ip" "$payload" "$secret_value"
+
+secret_value="$(printf '/%s/%s/private-root' Users example)"
+payload="$tmp_dir/local-path.json"
+write_json "$payload" "runtime.root=$secret_value"
+expect_fail_no_echo "local-path" "$payload" "$secret_value"
+
+secret_value="$(printf 'http%s//example.invalid/v1' 's:')"
+payload="$tmp_dir/endpoint-url.json"
+write_json "$payload" "endpoint.value=$secret_value"
+expect_fail_no_echo "endpoint-url" "$payload" "$secret_value"
+
+secret_value="$(printf -- '-----BEGIN %s KEY-----' PRIVATE)"
+payload="$tmp_dir/private-key.json"
+write_json "$payload" "material.value=$secret_value"
+expect_fail_no_echo "private-key" "$payload" "$secret_value"
+
+denylist="$tmp_dir/denylist.txt"
+{
+  printf '# comment\n'
+  printf '\n'
+  printf '%s\n' "$(printf 'Forbidden%sTerm' Example)"
+} >"$denylist"
+payload="$tmp_dir/denylist-value.json"
+deny_value="$(printf 'Forbidden%sTerm' Example)"
+write_json "$payload" "labels.item=$deny_value"
+ANIMEM_PUBLIC_DENYLIST="$denylist" expect_fail_no_echo "denylist-value" "$payload" "$deny_value"
+
+secret_key="$deny_value"
+payload="$tmp_dir/denylist-key.json"
+write_json "$payload" "$secret_key=redacted"
+ANIMEM_PUBLIC_DENYLIST="$denylist" expect_fail_no_echo "denylist-key" "$payload" "$secret_key"
+
+nested_value="$(printf 'sk-%s' abcdefghijklmnop)"
+payload="$tmp_dir/nested.json"
+python3 - "$payload" "$nested_value" <<'PY'
+import json
+import sys
+with open(sys.argv[1], "w", encoding="utf-8") as fh:
+    json.dump({"items": [{"value": sys.argv[2]}]}, fh)
+    fh.write("\n")
+PY
+expect_fail_no_echo "nested" "$payload" "$nested_value"
+
+missing_denylist="$tmp_dir/missing.txt"
+set +e
+ANIMEM_PUBLIC_DENYLIST="$missing_denylist" bash "$checker" "$ok" >"$tmp_dir/missing.stdout" 2>"$tmp_dir/missing.stderr"
+missing_rc="$?"
+set -e
+if [[ "$missing_rc" -ne 64 ]]; then
+  printf 'missing denylist should exit 64, got %s\n' "$missing_rc" >&2
+  exit 1
+fi
+printf 'PASS negative redaction missing-denylist\n'
+
+set +e
+bash "$checker" "$tmp_dir/no-such-payload.json" >"$tmp_dir/missing-payload.stdout" 2>"$tmp_dir/missing-payload.stderr"
+missing_payload_rc="$?"
+set -e
+if [[ "$missing_payload_rc" -ne 64 ]]; then
+  printf 'missing payload should exit 64, got %s\n' "$missing_payload_rc" >&2
+  exit 1
+fi
+if grep -F -q -- "ANIMEM_PUBLIC_DENYLIST" "$tmp_dir/missing-payload.stderr"; then
+  printf 'missing payload reported denylist error\n' >&2
+  exit 1
+fi
+printf 'PASS negative redaction missing-payload\n'
+
+bad_content="$(printf 'sk-%s' zzzzzzzzzzzzzzzz)"
+bad_json="$tmp_dir/bad.json"
+printf '{"value": "%s"' "$bad_content" >"$bad_json"
+if bash "$checker" "$bad_json" >"$tmp_dir/bad.stdout" 2>"$tmp_dir/bad.stderr"; then
+  printf 'unexpected success: invalid json\n' >&2
+  exit 1
+fi
+if grep -F -q -- "$bad_content" "$tmp_dir/bad.stdout" "$tmp_dir/bad.stderr"; then
+  printf 'invalid json leaked raw payload\n' >&2
+  exit 1
+fi
+printf 'PASS negative redaction invalid-json\n'
+assert_no_bytecode
+
+printf 'redacted payload regression passed\n'

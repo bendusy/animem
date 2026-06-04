@@ -45,9 +45,9 @@ is_generated_package_entry() {
 
 is_disallowed_entry() {
   case "$1" in
-    .git/*|target/*|cache/*|data/*|scratch/*|tmp/*) return 0 ;;
+    .git/*|target/*|cache/*|data/*|scratch/*|tmp/*|__pycache__/*|*/__pycache__/*) return 0 ;;
     *.env|*.env.*|*.local.*|*.private.*|*.secret.*|*.bak|*.orig) return 0 ;;
-    *.db|*.db-*|*.dump|*.sqlite|*.sqlite3) return 0 ;;
+    *.db|*.db-*|*.dump|*.sqlite|*.sqlite3|*.pyc|*.pyo|*.pyd) return 0 ;;
     *) return 1 ;;
   esac
 }

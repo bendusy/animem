@@ -1,0 +1,33 @@
+{
+  "schema_version": "animem.provenance.event.v1",
+  "event_id": "event_example_candidate_001",
+  "event_kind": "candidate_evidence",
+  "subject": {
+    "ref_id": "ref_example_candidate_001",
+    "kind": "candidate",
+    "id": "candidate:example:001",
+    "content_hash": null,
+    "span": null,
+    "label": "Review Note B candidate"
+  },
+  "inputs": [
+    {
+      "ref_id": "ref_example_section_001",
+      "kind": "document_section",
+      "id": "section:example-policy-memo-a:001",
+      "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "span": {
+        "section_id": "section:example-policy-memo-a:001",
+        "char_start": 120,
+        "char_end": 184
+      },
+      "label": "Policy Memo A section 1"
+    }
+  ],
+  "outputs": [],
+  "redaction": {
+    "state": "synthetic",
+    "policy": "public-example-v1",
+    "removed": []
+  }
+}

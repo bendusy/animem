@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 1 ]]; then
+  printf 'usage: %s <payload.json>\n' "$0" >&2
+  exit 64
+fi
+
+payload="$1"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+policy_path="$script_dir/redaction_policy.py"
+
+PYTHONDONTWRITEBYTECODE=1 python3 - "$payload" "$policy_path" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+payload_path = sys.argv[1]
+policy_path = Path(sys.argv[2])
+
+spec = importlib.util.spec_from_file_location("animem_public_redaction_policy", policy_path)
+if spec is None or spec.loader is None:
+    print("redaction policy module is not loadable", file=sys.stderr)
+    sys.exit(64)
+policy = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = policy
+spec.loader.exec_module(policy)
+
+try:
+    payload = policy.load_json(payload_path)
+except policy.PayloadJsonError:
+    print("invalid JSON payload", file=sys.stderr)
+    sys.exit(65)
+except FileNotFoundError:
+    print("payload JSON is not a file", file=sys.stderr)
+    sys.exit(64)
+
+try:
+    denylist = policy.load_denylist_from_env()
+except FileNotFoundError:
+    print("ANIMEM_PUBLIC_DENYLIST is not a file", file=sys.stderr)
+    sys.exit(64)
+
+leaks = policy.find_leaks(payload, denylist)
+for line in policy.format_leaks(leaks):
+    print(line, file=sys.stderr)
+
+sys.exit(1 if leaks else 0)
+PY
+
+printf 'redacted payload passed\n'

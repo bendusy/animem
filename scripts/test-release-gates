@@ -65,4 +65,30 @@ expect_fail "source bundle db file" \
 git reset -q -- local.db
 rm -f local.db
 
+mkdir -p scripts/__pycache__
+printf 'bytecode placeholder\n' > scripts/__pycache__/redaction_policy.cpython-312.pyc
+git add -f scripts/__pycache__/redaction_policy.cpython-312.pyc
+printf 'scripts/__pycache__/redaction_policy.cpython-312.pyc\n' > manifest-pycache.txt
+expect_fail "source bundle python bytecode cache" \
+  bash scripts/check-source-bundle-allowlist manifest-pycache.txt
+git reset -q -- scripts/__pycache__/redaction_policy.cpython-312.pyc
+rm -rf scripts/__pycache__
+
+package_list="$(mktemp "${TMPDIR:-/tmp}/animem-package-list.XXXXXX")"
+(cd "$repo_root" && cargo package --allow-dirty --no-verify --list >"$package_list")
+for required in \
+  examples/provenance/README.md \
+  examples/provenance/candidate-evidence.synthetic.json \
+  examples/provenance/review-decision-event.synthetic.json \
+  examples/provenance/schema-artifact-manifest.synthetic.json \
+  scripts/check-redacted-event-payload \
+  scripts/redaction_policy.py \
+  scripts/test-redacted-event-payload; do
+  if ! grep -Fx -q "$required" "$package_list"; then
+    printf 'missing package entry: %s\n' "$required" >&2
+    exit 1
+  fi
+done
+rm -f "$package_list"
+
 printf 'release gate regression passed\n'

@@ -20,6 +20,8 @@ Cargo.lock
 *.private.*
 *.bak
 *.orig
+__pycache__/
+*.py[cod]
 
 # Secrets and local deployment files.
 *.pem

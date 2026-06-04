@@ -9,7 +9,7 @@ It provides neutral primitives for:
 - deriving lightweight document cards from caller-provided metadata;
 - representing reviewable memory candidates before promotion;
 - declaring private tokenizer/card/promotion rule packs without bundling them;
-- keeping provenance links between memory and source text.
+- describing storage-free provenance links with redacted references and hashes.
 
 This repository is intentionally separate from any private deployment,
 database, document archive, or agent runtime. It contains no real production
@@ -39,10 +39,13 @@ Recommended local checks before sending a change:
 cargo fmt -- --check
 cargo clippy --all-targets -- -D warnings
 cargo test --all
+bash scripts/test-redacted-event-payload
 bash scripts/test-release-gates
 ./scripts/scan-sensitive.sh
-cargo package --allow-dirty --no-verify --list >/tmp/animem-package-list.txt
-bash scripts/check-source-bundle-allowlist /tmp/animem-package-list.txt
+package_list="$(mktemp "${TMPDIR:-/tmp}/animem-package-list.XXXXXX")"
+trap 'rm -f "$package_list"' EXIT
+cargo package --allow-dirty --no-verify --list >"$package_list"
+bash scripts/check-source-bundle-allowlist "$package_list"
 ```
 
 ## Non-Goals
