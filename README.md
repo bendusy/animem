@@ -61,9 +61,8 @@ adding examples, fixtures, integrations, or package contents.
 
 ## Dependency Policy
 
-The core crate keeps dependencies small and auditable. Runtime integrations
-such as SQL storage, HTTP APIs, embeddings, and LLM extraction should be added
-behind explicit Cargo features.
+The core crate keeps dependencies small and auditable. Storage, network, model,
+and service integrations are outside this public slice until separately scoped.
 
 See [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md).
 
@@ -82,6 +81,3 @@ Private tuning belongs in extension profiles, not in Rust defaults. The public
 crate exposes `ExtensionProfile` for tokenizer terms, card rules, and promotion
 type mappings, but real values must live in a private repository or local
 runtime config.
-
-The replacement path for older `mf` maintenance code is tracked in
-[docs/MIGRATION_FROM_MF.md](docs/MIGRATION_FROM_MF.md).

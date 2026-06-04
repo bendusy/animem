@@ -13,23 +13,15 @@
 | `regex` | conservative heading and numbering detection | low |
 | `thiserror` | typed library errors | low |
 
-## Dev Dependencies
-
-| Dependency | Why It Exists |
-|---|---|
-| `insta` | snapshot testing with synthetic fixtures only |
-
 ## Deferred Integrations
 
 These are intentionally not part of the base crate:
 
-- SQL storage;
-- embedding clients;
-- LLM clients;
-- HTTP servers;
-- MCP servers;
+- persistence backends;
+- embedding/model clients;
+- service runtimes;
 - private deployment scripts;
 - private profile runners.
 
-They may be added later behind explicit Cargo features such as `storage-sql`,
-`embedding-http`, or `llm-client`.
+Do not treat this list as a public roadmap. Any integration must be separately
+scoped and reviewed before it becomes part of this repository.
