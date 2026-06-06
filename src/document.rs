@@ -18,7 +18,7 @@ pub struct DocumentAsset {
     pub content_hash: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DocumentSection {
     pub section_id: String,
     pub asset_id: String,
@@ -27,6 +27,10 @@ pub struct DocumentSection {
     pub text: String,
     pub char_start: usize,
     pub char_end: usize,
+    /// Arbitrary metadata (e.g. splitter version, attachment info).
+    /// Defaults to `null` for backward compatibility.
+    #[serde(default)]
+    pub meta: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
