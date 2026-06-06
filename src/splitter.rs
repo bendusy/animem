@@ -309,13 +309,11 @@ fn is_arabic_numbered_heading(s: &str) -> bool {
         _ => return false,
     }
     let rest = &s[digit_end..];
-    if rest.starts_with(". ") || rest.starts_with("、") || rest.starts_with("）") {
-        let after_delim = if rest.starts_with(". ") {
-            &rest[2..]
-        } else {
-            &rest[3..]
-        };
-        return !after_delim.trim().is_empty();
+    if let Some(after) = rest.strip_prefix(". ") {
+        return !after.trim().is_empty();
+    }
+    if rest.starts_with("、") || rest.starts_with("）") {
+        return !rest[3..].trim().is_empty();
     }
     false
 }
@@ -588,7 +586,7 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(sections.len() >= 1);
+        assert!(!sections.is_empty());
         let headings: Vec<_> = sections
             .iter()
             .filter_map(|s| s.heading.as_deref())
@@ -641,7 +639,7 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(sections.len() >= 1);
+        assert!(!sections.is_empty());
         let headings: Vec<_> = sections
             .iter()
             .filter_map(|s| s.heading.as_deref())
@@ -670,7 +668,7 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(sections.len() >= 1);
+        assert!(!sections.is_empty());
     }
 
     #[test]
@@ -761,7 +759,7 @@ mod tests {
         let text = "# 短标题\n这是很短的内容，远低于最大字符数限制。";
         let sections = split_sections(
             "asset-1",
-            &text,
+            text,
             SplitOptions {
                 max_section_chars: Some(3000),
                 ..Default::default()
@@ -776,7 +774,7 @@ mod tests {
     #[test]
     fn meta_defaults_to_none() {
         let text = "# Section\n合成文档内容包含足够文字来构成有效段落通过测试。";
-        let sections = split_sections("asset-1", &text, SplitOptions::default()).unwrap();
+        let sections = split_sections("asset-1", text, SplitOptions::default()).unwrap();
         assert_eq!(sections.len(), 1);
         assert_eq!(sections[0].meta, None);
     }
