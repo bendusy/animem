@@ -7,6 +7,7 @@
 
 mod authority;
 mod candidate;
+mod classification;
 mod document;
 mod domain;
 mod error;
@@ -24,6 +25,7 @@ mod validator;
 
 pub use authority::{parse_opt_authority, Authority, UnknownAuthority};
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
+pub use classification::{DirectiveStrength, Severity, SourceKind};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
 pub use domain::{
     AccessCount, Confidence, ContentHash, DomainError, DomainResult, ExperienceType, HitsCount,
