@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 
+mod authority;
 mod candidate;
 mod document;
 mod error;
@@ -17,6 +18,7 @@ mod schema;
 mod splitter;
 mod store;
 
+pub use authority::{parse_opt_authority, Authority, UnknownAuthority};
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
 pub use error::{AnimemError, Result};
