@@ -19,6 +19,7 @@ mod provenance;
 mod schema;
 mod splitter;
 mod store;
+mod validator;
 
 pub use authority::{parse_opt_authority, Authority, UnknownAuthority};
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
@@ -49,3 +50,4 @@ pub use store::{
     DocumentSearchRequest, DocumentSearchResult, DocumentSearchStore, DocumentStore, StoreError,
     StoreFuture,
 };
+pub use validator::{has_observation_marker, match_any_secret, sha256_hex, OBSERVATION_MARKERS};
