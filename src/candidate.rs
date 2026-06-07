@@ -35,6 +35,12 @@ pub struct Candidate {
     pub payload: Value,
     pub evidence: Vec<EvidenceSpan>,
     pub status: CandidateStatus,
+    /// Neutral document reference — set when candidate is grounded in a document asset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset_id: Option<String>,
+    /// Optional card reference for grouped extraction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub card_id: Option<String>,
 }
 
 impl Candidate {
@@ -52,6 +58,8 @@ impl Candidate {
             payload,
             evidence,
             status: CandidateStatus::Candidate,
+            asset_id: None,
+            card_id: None,
         }
     }
 }
