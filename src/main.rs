@@ -43,6 +43,20 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
             println!("{}", serde_json::to_string_pretty(&plan)?);
             Ok(())
         }
+        [command, tail @ ..] if command == "split" => {
+            let text = tail.first().map(|s| s.as_str()).unwrap_or("");
+            let sections = animem::split_sections(
+                "stdin",
+                text,
+                animem::SplitOptions {
+                    cjk_headings: true,
+                    ..Default::default()
+                },
+            )
+            .map_err(CliError::Animem)?;
+            println!("{}", serde_json::to_string_pretty(&sections)?);
+            Ok(())
+        }
         _ => Err(CliError::Usage),
     }
 }
@@ -71,7 +85,8 @@ fn print_usage() {
   animem profile validate <profile.toml>
   animem extension validate <extension-profile.json>
   animem extension validate <extension-profile.toml>
-  animem plan <profile.json|profile.toml>"
+  animem plan <profile.json|profile.toml>
+  animem split <text>"
     );
 }
 
@@ -87,6 +102,7 @@ enum CliError {
     UnsupportedExtension(String),
     MissingExtension,
     Profile(ProfileValidationError),
+    Animem(animem::AnimemError),
 }
 
 impl std::fmt::Display for CliError {
@@ -106,6 +122,7 @@ impl std::fmt::Display for CliError {
                 write!(f, "profile file must use .json or .toml extension")
             }
             CliError::Profile(err) => write!(f, "invalid profile: {err}"),
+            CliError::Animem(err) => write!(f, "{err}"),
         }
     }
 }
@@ -127,5 +144,11 @@ impl From<toml::de::Error> for CliError {
 impl From<ProfileValidationError> for CliError {
     fn from(value: ProfileValidationError) -> Self {
         CliError::Profile(value)
+    }
+}
+
+impl From<animem::AnimemError> for CliError {
+    fn from(value: animem::AnimemError) -> Self {
+        CliError::Animem(value)
     }
 }
