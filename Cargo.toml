@@ -33,11 +33,13 @@ serde_json = "1"
 sha2 = "0.10"
 thiserror = "2"
 toml = "0.8"
-
 # Optional: enables sqlx::Type derive for domain types.
 # OFF by default — public crate stays storage-free.
 # Enable only in private downstream (am-core) for PG integration.
 sqlx = { version = "0.9", optional = true, default-features = false, features = ["macros"] }
+
+[dev-dependencies]
+serde_yaml = "0.9"
 
 [features]
 default = []

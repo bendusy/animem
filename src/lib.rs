@@ -16,6 +16,7 @@ mod ids;
 mod maintenance;
 mod profile;
 mod provenance;
+mod registry;
 mod schema;
 mod splitter;
 mod store;
@@ -43,6 +44,7 @@ pub use provenance::{
     ProvenanceEvent, ProvenanceEventKind, ProvenanceRef, ProvenanceRefKind, RedactedField,
     RedactionState, RedactionSummary, PROVENANCE_EVENT_SCHEMA_VERSION,
 };
+pub use registry::{ConfigFile, LibraryConfig, LibraryRegistry};
 pub use schema::{SchemaArtifact, SchemaArtifactFile, SchemaArtifactKind};
 pub use splitter::{split_sections, SplitOptions};
 pub use store::{

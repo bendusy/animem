@@ -52,11 +52,30 @@ impl Slug {
 #[cfg_attr(feature = "db", sqlx(transparent))]
 pub struct Library(String);
 
+impl Library {
+    /// Create from raw string (no validation — validation done by LibraryRegistry).
+    pub fn from_raw(s: impl Into<String>) -> Self {
+        Library(s.into())
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 /// Experience type within a library.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "db", derive(sqlx::Type))]
 #[cfg_attr(feature = "db", sqlx(transparent))]
 pub struct ExperienceType(String);
+
+impl ExperienceType {
+    pub fn from_raw(s: impl Into<String>) -> Self {
+        ExperienceType(s.into())
+    }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
 
 // ============================================================================
 // Content types
@@ -153,6 +172,9 @@ pub enum DomainError {
 
     #[error("invalid non-empty string '{0}': '{1}'")]
     InvalidNonEmpty(String, String),
+
+    #[error("config error: {0}")]
+    Config(String),
 }
 
 pub type DomainResult<T> = Result<T, DomainError>;
