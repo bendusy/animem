@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
 
-use animem::{ExtensionProfile, LocalProfile, MaintenancePlan, ProfileValidationError};
+use animem::{ExtensionProfile, LocalProfile, MaintenancePlan, ProfileValidationError, ScanPlan};
 
 fn main() -> ExitCode {
     match run(env::args().skip(1).collect()) {
@@ -40,6 +40,12 @@ fn run(args: Vec<String>) -> Result<(), CliError> {
         [command, path] if command == "plan" => {
             let profile: LocalProfile = read_profile(path)?;
             let plan = MaintenancePlan::from_profile(&profile)?;
+            println!("{}", serde_json::to_string_pretty(&plan)?);
+            Ok(())
+        }
+        [command, path] if command == "scan" => {
+            let profile: LocalProfile = read_profile(path)?;
+            let plan = ScanPlan::from_profile(&profile)?;
             println!("{}", serde_json::to_string_pretty(&plan)?);
             Ok(())
         }
@@ -86,6 +92,7 @@ fn print_usage() {
   animem extension validate <extension-profile.json>
   animem extension validate <extension-profile.toml>
   animem plan <profile.json|profile.toml>
+  animem scan <profile.json|profile.toml>
   animem split <text>"
     );
 }

@@ -31,6 +31,8 @@ animem extension validate examples/extension-profile.example.json
 animem extension validate examples/extension-profile.example.toml
 animem plan examples/profile.example.json
 animem plan examples/profile.example.toml
+animem scan examples/profile.example.json
+animem scan examples/profile.example.toml
 ```
 
 Recommended local checks before sending a change:

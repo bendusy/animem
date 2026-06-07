@@ -21,6 +21,11 @@ pub enum ProvenanceRefKind {
     Candidate,
     MemoryRecord,
     SchemaArtifact,
+    Project,
+    Runtime,
+    Actor,
+    Artifact,
+    Reason,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -38,15 +43,30 @@ pub struct ProvenanceEvent {
     pub schema_version: String,
     pub event_id: String,
     pub event_kind: ProvenanceEventKind,
+    #[serde(default)]
+    pub occurred_at: String,
     pub subject: ProvenanceRef,
+    #[serde(default)]
+    pub project_ref: Option<ProvenanceRef>,
+    #[serde(default)]
+    pub runtime_ref: Option<ProvenanceRef>,
+    #[serde(default)]
+    pub actor_ref: Option<ProvenanceRef>,
+    #[serde(default)]
+    pub artifact_ref: Option<ProvenanceRef>,
+    #[serde(default)]
+    pub reason_ref: Option<ProvenanceRef>,
     pub inputs: Vec<ProvenanceRef>,
     pub outputs: Vec<ProvenanceRef>,
+    #[serde(default)]
+    pub redaction_status: RedactionState,
     pub redaction: RedactionSummary,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RedactionState {
+    #[default]
     Synthetic,
     Redacted,
     HashOnly,
@@ -75,9 +95,16 @@ impl ProvenanceEvent {
             schema_version: PROVENANCE_EVENT_SCHEMA_VERSION.into(),
             event_id: event_id.into(),
             event_kind,
+            occurred_at: "1970-01-01T00:00:00Z".into(),
             subject,
+            project_ref: None,
+            runtime_ref: None,
+            actor_ref: None,
+            artifact_ref: None,
+            reason_ref: None,
             inputs: Vec::new(),
             outputs: Vec::new(),
+            redaction_status: RedactionState::Synthetic,
             redaction: RedactionSummary::synthetic(),
         }
     }
@@ -135,10 +162,18 @@ mod tests {
             assert!(!json.contains(forbidden), "unexpected field: {forbidden}");
         }
         assert!(json.contains(PROVENANCE_EVENT_SCHEMA_VERSION));
+        assert!(json.contains("occurred_at"));
+        assert!(json.contains("project_ref"));
+        assert!(json.contains("runtime_ref"));
+        assert!(json.contains("actor_ref"));
+        assert!(json.contains("artifact_ref"));
+        assert!(json.contains("reason_ref"));
+        assert!(json.contains("redaction_status"));
 
         let decoded: ProvenanceEvent =
             serde_json::from_str(&json).expect("decode provenance event");
         assert_eq!(decoded.event_kind, ProvenanceEventKind::CandidateEvidence);
         assert_eq!(decoded.subject.kind, ProvenanceRefKind::DocumentSection);
+        assert_eq!(decoded.redaction_status, RedactionState::Synthetic);
     }
 }

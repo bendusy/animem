@@ -38,7 +38,7 @@ pub use extension::{
 };
 pub use extract::{ExtractRequest, ExtractResult};
 pub use ids::{asset_id, section_id};
-pub use maintenance::{MaintenanceJob, MaintenancePlan};
+pub use maintenance::{MaintenanceJob, MaintenancePlan, ScanJob, ScanPlan};
 pub use profile::{
     DataSource, LocalProfile, MaintenancePolicy, PathPrivacy, ProfileValidationError,
 };
@@ -50,8 +50,10 @@ pub use registry::{ConfigFile, LibraryConfig, LibraryRegistry};
 pub use schema::{SchemaArtifact, SchemaArtifactFile, SchemaArtifactKind};
 pub use splitter::{split_sections, SplitOptions};
 pub use store::{
-    DocumentAssetFilter, DocumentAssetPage, DocumentSearchHit, DocumentSearchHitKind,
-    DocumentSearchRequest, DocumentSearchResult, DocumentSearchStore, DocumentStore, StoreError,
+    ContextAssembler, ContextAssembly, ContextAssemblyRequest, ContextItem, DocumentAssetFilter,
+    DocumentAssetPage, DocumentSearchHit, DocumentSearchHitKind, DocumentSearchRequest,
+    DocumentSearchResult, DocumentSearchStore, DocumentStore, MemoryWriteRequest,
+    MemoryWriteResult, MemoryWriteStore, RuntimeConfig, RuntimeConfigProvider, StoreError,
     StoreFuture,
 };
 pub use validator::{has_observation_marker, match_any_secret, sha256_hex, OBSERVATION_MARKERS};

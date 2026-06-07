@@ -2,7 +2,7 @@
 
 These fixtures demonstrate public, storage-free provenance shapes. They are
 synthetic by construction and contain only opaque references, hashes, labels,
-and offsets.
+offsets, coarse timestamps, and project/runtime/actor/artifact/reason refs.
 
 ## Files
 

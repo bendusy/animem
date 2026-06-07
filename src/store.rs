@@ -4,7 +4,7 @@ use std::pin::Pin;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{AssetKind, DocumentAsset};
+use crate::{AssetKind, DocumentAsset, ProvenanceRef};
 
 pub type StoreFuture<'a, T, E> =
     Pin<Box<dyn Future<Output = std::result::Result<T, E>> + Send + 'a>>;
@@ -98,6 +98,86 @@ pub trait DocumentSearchStore {
     ) -> StoreFuture<'a, DocumentSearchResult, Self::Error>;
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryWriteRequest {
+    pub library: String,
+    pub memory_type: String,
+    pub title: String,
+    pub body: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default)]
+    pub links: Vec<String>,
+    #[serde(default)]
+    pub source_refs: Vec<String>,
+    #[serde(default)]
+    pub provenance_refs: Vec<ProvenanceRef>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryWriteResult {
+    pub memory_id: String,
+    pub content_hash: Option<String>,
+    pub provenance_event_id: Option<String>,
+}
+
+pub trait MemoryWriteStore {
+    type Error;
+
+    fn write_memory<'a>(
+        &'a self,
+        request: MemoryWriteRequest,
+    ) -> StoreFuture<'a, MemoryWriteResult, Self::Error>;
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeConfig {
+    pub profile_name: Option<String>,
+    pub schema_version: Option<String>,
+    #[serde(default)]
+    pub capabilities: Vec<String>,
+}
+
+pub trait RuntimeConfigProvider {
+    type Error;
+
+    fn runtime_config<'a>(&'a self) -> StoreFuture<'a, RuntimeConfig, Self::Error>;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextAssemblyRequest {
+    pub query: String,
+    pub source_id: Option<String>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ContextItem {
+    pub item_id: String,
+    pub kind: DocumentSearchHitKind,
+    pub asset_id: String,
+    pub section_id: Option<String>,
+    pub title: Option<String>,
+    pub snippet: Option<String>,
+    pub content_hash: Option<String>,
+    pub score: Option<f32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ContextAssembly {
+    pub query: String,
+    pub items: Vec<ContextItem>,
+}
+
+pub trait ContextAssembler {
+    type Error;
+
+    fn assemble_context<'a>(
+        &'a self,
+        request: ContextAssemblyRequest,
+    ) -> StoreFuture<'a, ContextAssembly, Self::Error>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,6 +253,62 @@ mod tests {
         }
     }
 
+    impl MemoryWriteStore for InMemoryStore {
+        type Error = StoreError;
+
+        fn write_memory<'a>(
+            &'a self,
+            request: MemoryWriteRequest,
+        ) -> StoreFuture<'a, MemoryWriteResult, Self::Error> {
+            Box::pin(async move {
+                Ok(MemoryWriteResult {
+                    memory_id: format!("memory:{}", request.title),
+                    content_hash: Some(self.asset.content_hash.clone()),
+                    provenance_event_id: None,
+                })
+            })
+        }
+    }
+
+    impl RuntimeConfigProvider for InMemoryStore {
+        type Error = StoreError;
+
+        fn runtime_config<'a>(&'a self) -> StoreFuture<'a, RuntimeConfig, Self::Error> {
+            Box::pin(async move {
+                Ok(RuntimeConfig {
+                    profile_name: Some("example".into()),
+                    schema_version: Some("1".into()),
+                    capabilities: vec!["document_search".into(), "memory_write".into()],
+                })
+            })
+        }
+    }
+
+    impl ContextAssembler for InMemoryStore {
+        type Error = StoreError;
+
+        fn assemble_context<'a>(
+            &'a self,
+            request: ContextAssemblyRequest,
+        ) -> StoreFuture<'a, ContextAssembly, Self::Error> {
+            Box::pin(async move {
+                Ok(ContextAssembly {
+                    query: request.query,
+                    items: vec![ContextItem {
+                        item_id: "ctx:asset_example_001".into(),
+                        kind: DocumentSearchHitKind::Asset,
+                        asset_id: self.asset.asset_id.clone(),
+                        section_id: None,
+                        title: self.asset.source_label.clone(),
+                        snippet: None,
+                        content_hash: Some(self.asset.content_hash.clone()),
+                        score: Some(1.0),
+                    }],
+                })
+            })
+        }
+    }
+
     #[test]
     fn document_store_trait_supports_async_backends_without_runtime_dependency() {
         let store = InMemoryStore {
@@ -198,5 +334,29 @@ mod tests {
             block_ready(store.search_documents(DocumentSearchRequest::new("Project Alpha")))
                 .expect("search documents");
         assert_eq!(result.hits[0].kind, DocumentSearchHitKind::Asset);
+
+        let written = block_ready(store.write_memory(MemoryWriteRequest {
+            library: "tech".into(),
+            memory_type: "procedure".into(),
+            title: "example".into(),
+            body: "[Pattern] synthetic public memory".into(),
+            tags: vec!["public".into()],
+            links: Vec::new(),
+            source_refs: vec!["source:example".into()],
+            provenance_refs: Vec::new(),
+        }))
+        .expect("write memory");
+        assert_eq!(written.memory_id, "memory:example");
+
+        let config = block_ready(store.runtime_config()).expect("runtime config");
+        assert!(config.capabilities.contains(&"memory_write".into()));
+
+        let context = block_ready(store.assemble_context(ContextAssemblyRequest {
+            query: "Project Alpha".into(),
+            source_id: None,
+            limit: Some(3),
+        }))
+        .expect("assemble context");
+        assert_eq!(context.items[0].asset_id, "asset_example_001");
     }
 }
