@@ -10,6 +10,7 @@ mod candidate;
 mod document;
 mod error;
 mod extension;
+mod extract;
 mod ids;
 mod maintenance;
 mod profile;
@@ -26,6 +27,7 @@ pub use extension::{
     CandidateTypeMapping, CardRulePack, ExtensionProfile, PromotionPolicy, TextPattern,
     TokenizerConfig,
 };
+pub use extract::{ExtractRequest, ExtractResult};
 pub use ids::{asset_id, section_id};
 pub use maintenance::{MaintenanceJob, MaintenancePlan};
 pub use profile::{
