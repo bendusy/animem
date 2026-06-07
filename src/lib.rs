@@ -8,6 +8,7 @@
 mod authority;
 mod candidate;
 mod document;
+mod domain;
 mod error;
 mod extension;
 mod extract;
@@ -22,6 +23,10 @@ mod store;
 pub use authority::{parse_opt_authority, Authority, UnknownAuthority};
 pub use candidate::{Candidate, CandidateKind, CandidateStatus, EvidenceSpan};
 pub use document::{AssetKind, DocumentAsset, DocumentCard, DocumentSection};
+pub use domain::{
+    AccessCount, Confidence, ContentHash, DomainError, DomainResult, ExperienceType, HitsCount,
+    Library, NonEmptyString, Slug, SourcesCount, Tag,
+};
 pub use error::{AnimemError, Result};
 pub use extension::{
     CandidateTypeMapping, CardRulePack, ExtensionProfile, PromotionPolicy, TextPattern,
